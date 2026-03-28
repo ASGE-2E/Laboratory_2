@@ -31,7 +31,78 @@ Jeisson Andrés Vergara Vargas
 │   README.md
 │   transformations.py
 │
-└───skeleton
+├───skeleton
+│   │   docker-compose.yml
+│   │
+│   ├───api_gateway
+│   │       app.py
+│   │       Dockerfile
+│   │
+│   ├───balise
+│   │       balise.py
+│   │
+│   ├───brake_actuator
+│   │       actuator.py
+│   │
+│   ├───dashboard
+│   │       dashboard.html
+│   │       Dockerfile
+│   │
+│   ├───dl
+│   │       ingest.py
+│   │       README.md
+│   │
+│   ├───driver_interface
+│   │       Dockerfile
+│   │       driver.html
+│   │
+│   ├───mas
+│   │       app.py
+│   │       Dockerfile
+│   │
+│   ├───onboard_unit
+│   │       obu.py
+│   │
+│   ├───passengers_db
+│   │       init.sql
+│   │
+│   ├───passengers_ms
+│   │       app.py
+│   │       Dockerfile
+│   │
+│   ├───portal
+│   │       Dockerfile
+│   │       index.html
+│   │
+│   ├───position_time_db
+│   │       init.sql
+│   │
+│   ├───position_time_ms
+│   │       app.py
+│   │       Dockerfile
+│   │
+│   ├───routes_db
+│   │       init.sql
+│   │
+│   ├───routes_ms
+│   │       app.py
+│   │       Dockerfile
+│   │       
+│   ├───tickets_ms
+│   │       app.py
+│   │       Dockerfile
+│   │
+│   ├───trains_db
+│   │       init.sql
+│   │
+│   ├───trains_ms
+│   │       app.py
+│   │       Dockerfile
+│   │
+│   └───train_sensor
+│           sensor.py
+│
+└───__pycache__
 ```
 
 ## Reporte

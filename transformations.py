@@ -163,7 +163,7 @@ def generate_microservice(name, database=None):
                 return jsonify(records=rows)
             
             @app.route('/records', methods=['POST'])
-                def create_record():
+            def create_record():
                 data = request.json
                 conn = get_conn()
                 cursor = conn.cursor()
@@ -175,6 +175,7 @@ def generate_microservice(name, database=None):
                 cursor.close()
                 conn.close()
                 return jsonify(status='created'), 201
+            
             if __name__ == '__main__':
                 app.run(host='0.0.0.0', port=80)
         """))
@@ -289,10 +290,10 @@ def generate_onboard_unit(name):
             import time, random
 
             def read_sensors():
-            return {{
-                'speed_kmh': round(random.uniform(0, 300), 1),
-                'position': f'{{random.uniform(40, 55):.4f}}, {{random.uniform(-5, 25):.4f}}'
-            }}
+                return {{
+                    'speed_kmh': round(random.uniform(0, 300), 1),
+                    'position': f'{{random.uniform(40, 55):.4f}}, {{random.uniform(-5, 25):.4f}}'
+                }}
 
             def send_to_ground(data):
                 print(f'[OBU {name}] Sending to ground control: {{data}}')
@@ -395,7 +396,7 @@ TIER_ORDER = {
 DB_IMAGES = {'database', 'data_lake'}
 
 def generate_docker_compose(components):
-    """components: { name: (tier, type) }"""
+    """Genera un docker-compose.yml válido con indentación de 2 espacios y puertos dinámicos."""
     path = 'skeleton/'
     os.makedirs(path, exist_ok=True)
 
@@ -405,51 +406,54 @@ def generate_docker_compose(components):
     )
 
     db_names = [n for n, (t, ct) in sorted_items if ct == 'database']
+    
+    # Contador para asignar puertos únicos a las DBs en el host (3306, 3307, etc)
+    db_port_offset = 0
 
     with open(os.path.join(path, 'docker-compose.yml'), 'w') as f:
+        f.write("version: '3.8'\n")
         f.write("services:\n")
+        
         for i, (name, (tier, ctype)) in enumerate(sorted_items):
-            port = 8000 + i
-            f.write(f" {name}:\n")
+            # Puerto para servicios web/microservicios (8001, 8002...)
+            service_port = 8000 + i 
+            
+            f.write(f"  {name}:\n") # 2 espacios de indentación
 
             if ctype == 'database':
-                f.write(" image: mysql:8\n")
-                f.write(" environment:\n")
-                f.write(" - MYSQL_ROOT_PASSWORD=root\n")
-                f.write(f" - MYSQL_DATABASE={name}\n")
-                f.write(" volumes:\n")
-                f.write(f" - ./{name}/init.sql:/docker-entrypoint-initdb.d/init.sql\n")
-                f.write(" ports:\n")
-                f.write(" - '3306:3306'\n")
+                host_db_port = 3306 + db_port_offset
+                f.write("    image: mysql:8\n") # 4 espacios de indentación
+                f.write("    environment:\n")
+                f.write("      - MYSQL_ROOT_PASSWORD=root\n")
+                f.write(f"      - MYSQL_DATABASE={name}\n")
+                f.write("    volumes:\n")
+                f.write(f"      - ./{name}/init.sql:/docker-entrypoint-initdb.d/init.sql\n")
+                f.write("    ports:\n")
+                f.write(f"      - '{host_db_port}:3306'\n")
+                db_port_offset += 1
 
             elif ctype == 'data_lake':
-                f.write(" image: python:3.11-slim\n")
-                f.write(f" volumes:\n - ./{name}:/app\n")
-                f.write(" working_dir: /app\n")
-                f.write(" command: python ingest.py\n")
+                f.write("    image: python:3.11-slim\n")
+                f.write(f"    volumes:\n      - ./{name}:/app\n")
+                f.write("    working_dir: /app\n")
+                f.write("    command: python ingest.py\n")
 
             elif ctype in {'onboard_unit', 'sensor', 'actuator', 'balise'}:
-                f.write(" image: python:3.11-slim\n")
-                script = {
-                'onboard_unit': 'obu.py',
-                'sensor': 'sensor.py',
-                'actuator': 'actuator.py',
-                'balise': 'balise.py',
-                }[ctype]
-                f.write(f" volumes:\n - ./{name}:/app\n")
-                f.write(" working_dir: /app\n")
-                f.write(f" command: python {script}\n")
+                f.write("    image: python:3.11-slim\n")
+                scripts = {'onboard_unit': 'obu.py', 'sensor': 'sensor.py', 'actuator': 'actuator.py', 'balise': 'balise.py'}
+                f.write(f"    volumes:\n      - ./{name}:/app\n")
+                f.write("    working_dir: /app\n")
+                f.write(f"    command: python {scripts[ctype]}\n")
 
             else:
-                # microservice, api_gateway, authority_service, web UIs
-                f.write(f" build: ./{name}\n")
-                f.write(f" ports:\n - '{port}:80'\n")
+                f.write(f"    build: ./{name}\n")
+                f.write(f"    ports:\n      - '{service_port}:80'\n")
                 if ctype == 'microservice' and db_names:
-                    f.write(f" depends_on:\n")
+                    f.write(f"    depends_on:\n")
                     for db in db_names:
-                        f.write(f" - {db}\n")
+                        f.write(f"      - {db}\n")
         
-        f.write("\nnetworks:\n default:\n driver: bridge\n")
+        f.write("\nnetworks:\n  default:\n    driver: bridge\n")
 
 # ─────────────────────────────────────────────
 # Dispatcher

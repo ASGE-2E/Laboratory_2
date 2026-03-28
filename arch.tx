@@ -3,6 +3,8 @@ Model:
     elements*=Element
 ;
 
+Comment: /\/\/.*$/ ;
+
 Element:
     Component | Connector
 ;
