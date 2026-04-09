@@ -9,6 +9,7 @@ services:
       - ./passengers_db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - '3306:3306'
+
   routes_db:
     image: mysql:8
     environment:
@@ -18,6 +19,7 @@ services:
       - ./routes_db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - '3307:3306'
+
   trains_db:
     image: mysql:8
     environment:
@@ -27,6 +29,7 @@ services:
       - ./trains_db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - '3308:3306'
+
   position_time_db:
     image: mysql:8
     environment:
@@ -36,101 +39,361 @@ services:
       - ./position_time_db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - '3309:3306'
-  dl:
+
+  gis_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=gis_db
+    volumes:
+      - ./gis_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3310:3306'
+
+  auth_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=auth_db
+    volumes:
+      - ./auth_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3311:3306'
+
+  data_lake:
     image: python:3.11-slim
     volumes:
-      - ./dl:/app
+      - ./data_lake:/app
     working_dir: /app
     command: python ingest.py
-  onboard_unit:
+
+  switch_actuator:
     image: python:3.11-slim
     volumes:
-      - ./onboard_unit:/app
+      - ./switch_actuator:/app
     working_dir: /app
-    command: python obu.py
-  train_sensor:
+    command: python actuator.py
+
+  axle_counter:
     image: python:3.11-slim
     volumes:
-      - ./train_sensor:/app
+      - ./axle_counter:/app
     working_dir: /app
     command: python sensor.py
+
+  track_circuit:
+    image: python:3.11-slim
+    volumes:
+      - ./track_circuit:/app
+    working_dir: /app
+    command: python sensor.py
+
+  vertical_signal:
+    build: ./vertical_signal
+    ports:
+      - '8010:80'
+
+  train_sensors:
+    image: python:3.11-slim
+    volumes:
+      - ./train_sensors:/app
+    working_dir: /app
+    command: python sensor.py
+
+  tims:
+    image: python:3.11-slim
+    volumes:
+      - ./tims:/app
+    working_dir: /app
+    command: python control.py
+    depends_on:
+      - train_sensors
+
+  tcms:
+    image: python:3.11-slim
+    volumes:
+      - ./tcms:/app
+    working_dir: /app
+    command: python control.py
+    depends_on:
+      - brake_actuator
+
   brake_actuator:
     image: python:3.11-slim
     volumes:
       - ./brake_actuator:/app
     working_dir: /app
     command: python actuator.py
+
   balise:
     image: python:3.11-slim
     volumes:
       - ./balise:/app
     working_dir: /app
     command: python balise.py
+
+  eurolazo:
+    image: python:3.11-slim
+    volumes:
+      - ./eurolazo:/app
+    working_dir: /app
+    command: python balise.py
+
+  dmi:
+    build: ./dmi
+    ports:
+      - '8017:80'
+    depends_on:
+      - evc
+
+  btm:
+    image: python:3.11-slim
+    volumes:
+      - ./btm:/app
+    working_dir: /app
+    command: python actuator.py
+    depends_on:
+      - balise
+      - eurolazo
+      - stm
+
+  gnss_frmcs_gsm_r:
+    image: python:3.11-slim
+    volumes:
+      - ./gnss_frmcs_gsm_r:/app
+    working_dir: /app
+    command: python antenna.py
+    depends_on:
+      - evc
+
   passengers_ms:
     build: ./passengers_ms
     ports:
-      - '8009:80'
+      - '8020:80'
     depends_on:
+      - mq
       - passengers_db
-      - routes_db
-      - trains_db
-      - position_time_db
+
   routes_ms:
     build: ./routes_ms
     ports:
-      - '8010:80'
+      - '8021:80'
     depends_on:
-      - passengers_db
+      - mq
       - routes_db
-      - trains_db
-      - position_time_db
-  trains_ms:
-    build: ./trains_ms
+
+  train_ms:
+    build: ./train_ms
     ports:
-      - '8011:80'
+      - '8022:80'
     depends_on:
-      - passengers_db
-      - routes_db
+      - mq
       - trains_db
-      - position_time_db
+
   position_time_ms:
     build: ./position_time_ms
     ports:
-      - '8012:80'
+      - '8023:80'
     depends_on:
-      - passengers_db
-      - routes_db
-      - trains_db
+      - mq
       - position_time_db
-  tickets_ms:
-    build: ./tickets_ms
+
+  gis_ms:
+    build: ./gis_ms
     ports:
-      - '8013:80'
+      - '8024:80'
     depends_on:
-      - passengers_db
-      - routes_db
-      - trains_db
-      - position_time_db
+      - mq
+      - gis_db
+
+  auth_ms:
+    build: ./auth_ms
+    ports:
+      - '8025:80'
+    depends_on:
+      - mq
+      - auth_db
+
+  ingestor_ms:
+    build: ./ingestor_ms
+    ports:
+      - '8026:80'
+    depends_on:
+      - data_lake
+
+  mq:
+    image: rabbitmq:3-management
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    depends_on:
+      - ingestor_ms
+
+  interlocking_ms:
+    build: ./interlocking_ms
+    ports:
+      - '8028:80'
+    depends_on:
+      - axle_counter
+      - track_circuit
+      - switch_actuator
+      - vertical_signal
+
   mas:
     build: ./mas
     ports:
-      - '8014:80'
+      - '8029:80'
+    depends_on:
+      - gnss_node
+      - frmcs_node
+      - gsmr_node
+      - etml_interface
+      - interlocking_ms
+
+  kmc:
+    build: ./kmc
+    ports:
+      - '8030:80'
+
+  stm:
+    image: python:3.11-slim
+    volumes:
+      - ./stm:/app
+    working_dir: /app
+    command: python translator.py
+
+  evc:
+    image: python:3.11-slim
+    volumes:
+      - ./evc:/app
+    working_dir: /app
+    command: python obu.py
+    depends_on:
+      - kmc
+      - stm
+      - tims
+
+  ato:
+    image: python:3.11-slim
+    volumes:
+      - ./ato:/app
+    working_dir: /app
+    command: python obu.py
+    depends_on:
+      - evc
+
+  tiu:
+    image: python:3.11-slim
+    volumes:
+      - ./tiu:/app
+    working_dir: /app
+    command: python translator.py
+    depends_on:
+      - evc
+      - ato
+      - tcms
+
   api_gateway:
     build: ./api_gateway
     ports:
-      - '8015:80'
-  portal:
-    build: ./portal
+      - '8035:80'
+    depends_on:
+      - passengers_ms
+      - routes_ms
+      - train_ms
+      - position_time_ms
+      - gis_ms
+      - auth_ms
+
+  etml_interface:
+    build: ./etml_interface
     ports:
-      - '8016:80'
-  dashboard:
-    build: ./dashboard
+      - '8036:80'
+    depends_on:
+      - api_gateway
+
+  leu:
+    image: python:3.11-slim
+    volumes:
+      - ./leu:/app
+    working_dir: /app
+    command: python controller.py
+    depends_on:
+      - balise
+      - eurolazo
+      - interlocking_ms
+
+  gnss_node:
+    image: python:3.11-slim
+    volumes:
+      - ./gnss_node:/app
+    working_dir: /app
+    command: python node.py
+    depends_on:
+      - gnss_frmcs_gsm_r
+
+  frmcs_node:
+    image: python:3.11-slim
+    volumes:
+      - ./frmcs_node:/app
+    working_dir: /app
+    command: python node.py
+    depends_on:
+      - gnss_frmcs_gsm_r
+
+  gsmr_node:
+    image: python:3.11-slim
+    volumes:
+      - ./gsmr_node:/app
+    working_dir: /app
+    command: python node.py
+    depends_on:
+      - gnss_frmcs_gsm_r
+
+  portal_web:
+    build: ./portal_web
     ports:
-      - '8017:80'
-  driver_interface:
-    build: ./driver_interface
+      - '8041:80'
+    depends_on:
+      - api_gateway
+      - train_ms
+
+  mobile_app:
+    build: ./mobile_app
     ports:
-      - '8018:80'
+      - '8042:80'
+    depends_on:
+      - api_gateway
+      - train_ms
+
+  passenger_display:
+    build: ./passenger_display
+    ports:
+      - '8043:80'
+    depends_on:
+      - api_gateway
+
+  station_information:
+    build: ./station_information
+    ports:
+      - '8044:80'
+    depends_on:
+      - api_gateway
+
+  maintenance_terminal:
+    build: ./maintenance_terminal
+    ports:
+      - '8045:80'
+    depends_on:
+      - api_gateway
+
+  dashboard_ctc_crc:
+    build: ./dashboard_ctc_crc
+    ports:
+      - '8046:80'
+    depends_on:
+      - api_gateway
+
 
 networks:
   default:

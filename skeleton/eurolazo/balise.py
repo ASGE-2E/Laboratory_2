@@ -1,8 +1,8 @@
 
-# Balise (balise) — ERTMS T5
+# Balise (eurolazo) — ERTMS T5
 # Track-side transponder transmitting position reference data to passing trains.
 
-BALISE_ID = 'balise'
+BALISE_ID = 'eurolazo'
 POSITION_M = 12500 # metres from reference point
 
 def transmit():

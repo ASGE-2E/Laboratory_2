@@ -1,0 +1,1 @@
+print('Network Node gsmr_node routing packets...')

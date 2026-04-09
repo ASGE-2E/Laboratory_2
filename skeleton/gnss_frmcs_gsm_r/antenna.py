@@ -1,0 +1,1 @@
+print('Antenna gnss_frmcs_gsm_r receiving signal...')

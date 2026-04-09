@@ -10,7 +10,6 @@
 - Maria Jose Jara Herrera | mjarah@unal.edu.co
 - Johan Sebastian Medina Canizares | josmedinaca@unal.edu.co
 
-
 **Docente:**
 Jeisson Andrés Vergara Vargas
 

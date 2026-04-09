@@ -1,64 +1,242 @@
 architecture:
-    // T1 — Presentation
-    component presentation web_interface portal
-    component presentation operator_ui dashboard
-    component presentation driver_ui driver_interface
 
-    // T2 — Communication
+    // =========================================================
+    // System 1: ETML - elements
+    // =========================================================
+
+    // ---------------------
+    // System: ETML, Tier: T1 Presentation
+    // ---------------------
+    component presentation web_interface portal_web
+    component presentation web_interface mobile_app
+    component presentation web_interface passenger_display
+    component presentation web_interface station_information
+    component presentation operator_ui maintenance_terminal
+    component presentation operator_ui dashboard_ctc_crc
+
+    // ---------------------
+    // System: ETML, Tier: T2 Communication
+    // ---------------------
     component communication api_gateway api_gateway
+    component communication interface etml_interface
 
-    // T3 — Logic
+    // ---------------------
+    // System: ETML, Tier: T3 Logic
+    // ---------------------
     component logic microservice passengers_ms
     component logic microservice routes_ms
-    component logic microservice trains_ms
+    component logic microservice train_ms
     component logic microservice position_time_ms
-    component logic microservice tickets_ms
-    component logic authority_service mas
+    component logic microservice gis_ms
+    component logic microservice auth_ms
+    component logic microservice ingestor_ms
+    component logic broker mq
 
-    // T4 — Data
+    // ---------------------
+    // System: ETML, Tier: T4 Data
+    // ---------------------
     component data database passengers_db
     component data database routes_db
     component data database trains_db
     component data database position_time_db
-    component data data_lake dl
+    component data database gis_db
+    component data database auth_db
+    component data data_lake data_lake
 
-    // T5 — Physical
-    component physical onboard_unit onboard_unit
-    component physical sensor train_sensor
-    component physical actuator brake_actuator
-    component physical balise balise
+    // =========================================================
+    // System 1: ETML - connectors
+    // =========================================================
 
-    // Connectors — T1 → T2
-    connector data_flow portal -> api_gateway
-    connector data_flow dashboard -> api_gateway
-    connector data_flow driver_interface -> api_gateway
+    // connectors: (ETML) T1 → (ETML) T2
+    connector data_flow portal_web -> api_gateway
+    connector data_flow mobile_app -> api_gateway
+    connector data_flow passenger_display -> api_gateway
+    connector data_flow station_information -> api_gateway
+    connector data_flow maintenance_terminal -> api_gateway
+    connector data_flow dashboard_ctc_crc -> api_gateway
 
-    // Connectors — T2 → T3
+    // connectors: (ETML) T2 intra-tier
+    connector data_flow etml_interface -> api_gateway
+
+    // connectors: (ETML) T2 → (ETML) T3
     connector data_flow api_gateway -> passengers_ms
     connector data_flow api_gateway -> routes_ms
-    connector data_flow api_gateway -> trains_ms
+    connector data_flow api_gateway -> train_ms
     connector data_flow api_gateway -> position_time_ms
-    connector data_flow api_gateway -> tickets_ms
-    connector data_flow api_gateway -> mas
+    connector data_flow api_gateway -> gis_ms
+    connector data_flow api_gateway -> auth_ms
 
-    // Connectors — T3 → T4
+    // connectors: (ETML) T3 intra-tier
+    connector data_flow passengers_ms -> mq
+    connector data_flow routes_ms -> mq
+    connector data_flow train_ms -> mq
+    connector data_flow position_time_ms -> mq
+    connector data_flow gis_ms -> mq
+    connector data_flow auth_ms -> mq
+    connector event_notification mq -> ingestor_ms
+
+    // connectors: (ETML) T3 → (ETML) T4
     connector dependency passengers_ms -> passengers_db
     connector dependency routes_ms -> routes_db
-    connector dependency trains_ms -> trains_db
+    connector dependency train_ms -> trains_db
     connector dependency position_time_ms -> position_time_db
-    connector data_flow position_time_ms -> dl
+    connector dependency auth_ms -> auth_db
+    connector dependency gis_ms -> gis_db
+    connector data_flow ingestor_ms -> data_lake
 
-    // Connectors — T3 intra-tier
-    connector data_flow mas -> position_time_ms
-    connector data_flow mas -> routes_ms
+    // connectors: (ETML) T3 → (ETML) T1
+    connector event_notification portal_web -> train_ms 
+    connector event_notification mobile_app -> train_ms 
 
-    // Connectors — T5 → T3
-    connector event_notification train_sensor -> onboard_unit
-    connector data_flow onboard_unit -> position_time_ms
 
-    // Connectors — T3 → T5
-    connector control_command mas -> onboard_unit
-    connector control_command onboard_unit -> brake_actuator
+    // =========================================================
+    // System 2: ENCLAVAMIENTO - elements
+    // =========================================================
+
+    // ---------------------
+    // System: ENCLAVAMIENTO, Tier: T3 Logic
+    // ---------------------
+    component logic microservice interlocking_ms
+
+    // ---------------------
+    // System: ENCLAVAMIENTO, Tier: T5 Physical
+    // ---------------------
+    component physical actuator switch_actuator
+    component physical sensor axle_counter
+    component physical sensor track_circuit
+    component physical display vertical_signal
+
+    // =========================================================
+    // System 2: ENCLAVAMIENTO - connectors
+    // =========================================================
+
+    // connectors: (ENCLAVAMIENTO) T5 → (ENCLAVAMIENTO) T3
+    connector event_notification interlocking_ms -> axle_counter 
+    connector event_notification interlocking_ms -> track_circuit
+
+    // connectors: (ENCLAVAMIENTO) T3 → (ENCLAVAMIENTO) T5
+    connector control_command interlocking_ms -> switch_actuator
+    connector data_flow interlocking_ms -> vertical_signal
+
+
+    // =========================================================
+    // System 3: CONTROL DEL VEHÍCULO - elements
+    // =========================================================
+
+    // ---------------------
+    // System: CONTROL DEL VEHÍCULO, Tier: T5 Physical
+    // ---------------------
+    component physical sensor train_sensors
+    component physical control_unit tims
+    component physical control_unit tcms
+    component physical actuator brake_actuator
+
+    // =========================================================
+    // System 3: CONTROL DEL VEHÍCULO - connectors
+    // =========================================================
+
+    // connectors: (CONTROL DEL VEHÍCULO) T5 intra-tier
+    connector dependency tims -> train_sensors
+    connector control_command tcms -> brake_actuator
+
+
+    // =========================================================
+    // System 4: ERTMS - elements
+    // =========================================================
+
+    // ---------------------
+    // System: ERTMS > ETCS > Trackside, Tier: T3 Logic
+    // ---------------------
+    component logic authority_service mas
+
+    // ---------------------
+    // System: ERTMS > ETCS > Trackside, Tier: T2 Communication
+    // ---------------------
+    component communication controller leu
+
+    // ---------------------
+    // System: ERTMS > ETCS > Trackside, Tier: T5 Physical
+    // ---------------------
+    component physical balise balise
+    component physical balise eurolazo
+
+    // ---------------------
+    // System: ERTMS > ETCS > Onboard, Tier: T1 Presentation
+    // ---------------------
+    component physical driver_ui dmi
+
+    // ---------------------
+    // System: ERTMS > ETCS > Onboard, Tier: T3 Logic
+    // ---------------------
+    component logic microservice kmc
+    component logic translator stm
+    component logic onboard_unit evc
+    component logic onboard_unit ato
+    component logic translator tiu
+
+    // ---------------------
+    // System: ERTMS > ETCS > Onboard, Tier: T5 Physical
+    // ---------------------
+    component physical actuator btm
+    component physical antenna gnss_frmcs_gsm_r
+
+    // ---------------------
+    // System: ERTMS > Communication Systems, Tier: T2 Communication
+    // ---------------------
+    component communication network_node gnss_node
+    component communication network_node frmcs_node
+    component communication network_node gsmr_node
+
+    // =========================================================
+    // System 4: ERTMS - Connectors
+    // =========================================================
+
+    // connectors: (ERTMS > ETCS > Trackside) T2 → (ERTMS > ETCS > Trackside) T5
+    connector data_flow leu -> balise
+    connector data_flow leu -> eurolazo
+
+    // connectors: (ERTMS > ETCS > Trackside) T5 → (ERTMS > ETCS > Onboard) T5
+    connector data_flow btm -> balise
+    connector data_flow btm -> eurolazo
+
+    // connectors: (ERTMS > ETCS > Onboard) T5 → (ERTMS > ETCS > Onboard) T3
+    connector data_flow btm -> stm
+    connector control_command gnss_frmcs_gsm_r -> evc
+
+    // connectors: (ERTMS > ETCS > Onboard) T3 intra-tier
+    connector dependency evc -> kmc
+    connector data_flow evc -> stm
+    connector data_flow ato -> evc
+    connector control_command tiu -> evc
+    connector control_command tiu -> ato
+
+    // connectors: (ERTMS > ETCS > Onboard) T1 → (ERTMS > ETCS > Onboard) T3
+    connector data_flow dmi -> evc
     
-    // Connectors — T5 intra-tier
-    connector data_flow balise -> onboard_unit
+    // connectors: (ERTMS > Communication Systems) T2 → (ERTMS > ETCS > Onboard) T2
+    connector control_command gnss_node -> gnss_frmcs_gsm_r
+    connector control_command frmcs_node -> gnss_frmcs_gsm_r
+    connector control_command gsmr_node -> gnss_frmcs_gsm_r
+
+    // connectors: (ERTMS > Communication Systems) T2 → (ERTMS > ETCS > Trackside) T3
+    connector control_command mas -> gnss_node
+    connector control_command mas -> frmcs_node
+    connector control_command mas -> gsmr_node 
+
+
+    // =========================================================
+    // CROSS SYSTEMS - connectors
+    // =========================================================
+
+    // connectors: (ERTMS > ETCS > Trackside) T3 → (ETML) T2
+    connector data_flow mas -> etml_interface
+
+    // connectors: (ERTMS > ETCS > Trackside) T3 → (ENCLAVAMIENTO) T3 
+    connector data_flow mas -> interlocking_ms
+
+    // connectors: (ERTMS > ETCS > Trackside) T2 → (ENCLAVAMIENTO) T3 
+    connector data_flow leu -> interlocking_ms
+
+    // connectors: (ERTMS > ETCS > Onboard) T2 → (CONTROL DEL VEHÍCULO) T5
+    connector dependency evc -> tims
+    connector control_command tiu -> tcms

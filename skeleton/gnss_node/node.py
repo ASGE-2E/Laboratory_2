@@ -1,0 +1,1 @@
+print('Network Node gnss_node routing packets...')

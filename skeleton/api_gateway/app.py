@@ -5,11 +5,11 @@ import requests
 app = Flask(__name__)
 
 ROUTES = {
-    '/passengers': 'http://passengers-ms:80',
-    '/routes': 'http://routes-ms:80',
-    '/trains': 'http://trains-ms:80',
-    '/position': 'http://position-time-ms:80',
-    '/tickets': 'http://tickets-ms:80',
+    '/passengers': 'http://passengers_ms:80',
+    '/routes': 'http://routes_ms:80',
+    '/trains': 'http://trains_ms:80',
+    '/position': 'http://position_time_ms:80',
+    '/tickets': 'http://tickets_ms:80',
     '/authority': 'http://mas:80',
 }
 
@@ -18,7 +18,8 @@ ROUTES = {
 def gateway(path):
     for prefix, target in ROUTES.items():
         if ('/' + path).startswith(prefix):
-            url = target + '/' + path
+            internal_path = ('/' + path).replace(prefix, '', 1)
+            url = target + '/' + internal_path
             resp = requests.request(
                 method=request.method,
                 url=url,
