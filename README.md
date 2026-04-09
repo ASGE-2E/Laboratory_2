@@ -22,96 +22,20 @@ Jeisson Andrés Vergara Vargas
 ## Archivos
 
 ```
-│   arch.tx
-│   Dockerfile
-│   generation.py
-│   metamodel.py
-│   model.arch
-│   README.md
-│   transformations.py
+│ Dockerfile
+│ README.md
+│ .gitignore
+│ model.arch
+│ report.pdf
 │
-├───skeleton
-│   │   docker-compose.yml
+├───src/
+│   │ __init__.py
+│   │ arch.tx
+│   │ generation.py
+│   │ metamodel.py
+│   │ transformations.py
 │   │
-│   ├───api_gateway
-│   │       app.py
-│   │       Dockerfile
-│   │
-│   ├───balise
-│   │       balise.py
-│   │
-│   ├───brake_actuator
-│   │       actuator.py
-│   │
-│   ├───dashboard
-│   │       dashboard.html
-│   │       Dockerfile
-│   │
-│   ├───dl
-│   │       ingest.py
-│   │       README.md
-│   │
-│   ├───driver_interface
-│   │       Dockerfile
-│   │       driver.html
-│   │
-│   ├───mas
-│   │       app.py
-│   │       Dockerfile
-│   │
-│   ├───onboard_unit
-│   │       obu.py
-│   │
-│   ├───passengers_db
-│   │       init.sql
-│   │
-│   ├───passengers_ms
-│   │       app.py
-│   │       Dockerfile
-│   │
-│   ├───portal
-│   │       Dockerfile
-│   │       index.html
-│   │
-│   ├───position_time_db
-│   │       init.sql
-│   │
-│   ├───position_time_ms
-│   │       app.py
-│   │       Dockerfile
-│   │
-│   ├───routes_db
-│   │       init.sql
-│   │
-│   ├───routes_ms
-│   │       app.py
-│   │       Dockerfile
-│   │       
-│   ├───tickets_ms
-│   │       app.py
-│   │       Dockerfile
-│   │
-│   ├───trains_db
-│   │       init.sql
-│   │
-│   ├───trains_ms
-│   │       app.py
-│   │       Dockerfile
-│   │
-│   └───train_sensor
-│           sensor.py
+│   └───__pycache__/
 │
-└───__pycache__
+└───skeleton/
 ```
-
-## Reporte
-
-1. Describe el proceso de traducción de la vista C&C del Laboratorio 1 a un modelo DSL. ¿Qué te resultó sencillo? ¿Qué fue lo que requirió más criterio o adaptación?
-
-> Respuesta aquí
-
-<br>
-
-2. ¿Con qué limitaciones te encontraste en la gramática del DSL o en las reglas de transformación al representar el ERTMS? ¿Cómo las superaste?
-
-> Respuesta aquí
